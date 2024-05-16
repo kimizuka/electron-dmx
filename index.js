@@ -3,7 +3,7 @@ const { app, BrowserWindow } = require('electron/main');
 
 const path = '/dev/tty.usbserial-EN437503';
 const dmx = new DMX();
-const universe = dmx.addUniverse('demo', 'enttec-usb-dmx-pro', path);
+const universe = dmx.addUniverse('dmx', 'enttec-usb-dmx-pro', path);
 
 function createWindow () {
   const win = new BrowserWindow({

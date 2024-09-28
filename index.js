@@ -1,29 +1,37 @@
 const DMX = require('dmx');
-const { app, BrowserWindow } = require('electron/main');
+const path = require('path');
+const { app, BrowserWindow, ipcMain } = require('electron/main');
 
-const path = '/dev/tty.usbserial-EN437503';
+const dev = '/dev/tty.usbserial-EN437503';
 const dmx = new DMX();
-const universe = dmx.addUniverse('dmx', 'enttec-usb-dmx-pro', path);
+const universe = dmx.addUniverse('dmx', 'enttec-usb-dmx-pro', dev);
 
 function createWindow () {
   const win = new BrowserWindow({
     width: 800,
-    height: 600
+    height: 600,
+    webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
+      contextIsolation: true
+    }
   });
 
   let isOn = false;
 
   setInterval(() => {
-    const power = Number(isOn) * 100;
+    const power = Number(isOn) * 10;
 
     universe.update({ 2: power });
-    console.log(power);
 
     isOn = !isOn;
   }, 1000);
 
   win.loadFile('index.html');
 }
+
+ipcMain.on('click', (event, data) => {
+  console.log(event, data);
+});
 
 app.whenReady().then(() => {
   createWindow();

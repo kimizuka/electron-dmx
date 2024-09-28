@@ -1,9 +1,57 @@
 <html lang="ja">
   <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8" />
     <title>Electron</title>
+    <meta http-equiv="Content-Security-Policy" content="script-src https://cdn.jsdelivr.net" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+    </style>
   </head>
   <body>
-    <h1>Electron</h1>
+    <canvas></canvas>
+    <video autoplay playsinline muted></video>
+    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1/dist/face-api.js"></script>
+    <script>
+      (async () => {
+        // await faceapi.nets.tinyFaceDetector.loadFromUri('models');
+        // await faceapi.nets.faceLandmark68Net.loadFromUri('models');
+        // await faceapi.nets.faceRecognitionNet.loadFromUri('models');
+        // await faceapi.nets.faceExpressionNet.loadFromUri('models');
+        const video = document.querySelector('video');
+        const canvas = document.querySelector('canvas');
+        const options = new faceapi.TinyFaceDetectorOptions();
+        // const displaySize = { width: video.width, height: video.height };
+        // faceapi.matchDimensions(canvas, displaySize);
+
+        const stream = await navigator.mediaDevices.getUserMedia({
+          video: {
+            facingMode: 'user'
+          },
+          audio: false
+        });
+
+        video.srcObject = stream;
+        video.play();
+
+        tick();
+
+        async function tick() {
+          console.log('!');
+          const result = await faceapi.detectSingleFace(
+            video,
+            options
+          ).withFaceExpressions();
+          
+          console.log(result);
+
+          requestAnimationFrame(tick);
+        }
+      })();
+    </script>
+    
   </body>
 </html>

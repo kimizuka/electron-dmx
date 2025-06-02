@@ -23,7 +23,7 @@ export default function IndexPage() {
         <input
           type="range"
           min={ 0 }
-          max={ 100 }
+          max={ 255 }
           step={ 1 }
           value={ value }
           onChange={ (evt) => setValue(Number(evt.target.value)) }

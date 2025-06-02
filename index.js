@@ -16,21 +16,14 @@ function createWindow () {
     }
   });
 
-  let isOn = false;
-
-  setInterval(() => {
-    const power = Number(isOn) * 10;
-
-    universe.update({ 2: power });
-
-    isOn = !isOn;
-  }, 1000);
+  universe.update({ 2: 0 });
 
   win.loadFile('index.html');
 }
 
-ipcMain.on('click', (event, data) => {
-  console.log(event, data);
+ipcMain.on('render', (_, val) => {
+  console.log(val);
+  universe.update({ 2: val });
 });
 
 app.whenReady().then(() => {

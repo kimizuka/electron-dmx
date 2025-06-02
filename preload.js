@@ -1,5 +1,5 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
 contextBridge.exposeInMainWorld('electron', {
-  click: (evt) => ipcRenderer.send('click', evt)
+  render: (val) => ipcRenderer.send('render', val)
 });

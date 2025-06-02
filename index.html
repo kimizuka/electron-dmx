@@ -2,56 +2,154 @@
   <head>
     <meta charset="UTF-8" />
     <title>Electron</title>
-    <meta http-equiv="Content-Security-Policy" content="script-src https://cdn.jsdelivr.net" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@700&display=swap" rel="stylesheet">
     <style>
       * {
         margin: 0;
         padding: 0;
         box-sizing: border-box;
       }
+
+      body {
+        font-family: 'IBM Plex Sans';
+        background: black;
+      }
+
+      video {
+        position: absolute;
+        inset: 0;
+        margin: auto;
+      }
+
+      canvas {
+        position: absolute;
+        inset: 0;
+        margin: auto;
+      }
+
+      p {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        font-size: 80px;
+        -webkit-text-stroke: 2px white;
+        transform: translate(-300px, -240px);
+      }
+
+      input {
+        display: block;
+        position: absolute;
+        top: 50%;
+        right: 50%;
+        width: 40px;
+        height: 40px;
+        transform: translate(300px, -220px);
+      }
     </style>
   </head>
   <body>
-    <canvas></canvas>
     <video autoplay playsinline muted></video>
-    <script src="https://cdn.jsdelivr.net/npm/@vladmandic/face-api@1/dist/face-api.js"></script>
+    <canvas></canvas>
+    <input type="checkbox" />
+    <p>😄 000</p>
+    <script src="./face-api.min.js"></script>
     <script>
+      const happyList = [];
+
       (async () => {
-        // await faceapi.nets.tinyFaceDetector.loadFromUri('models');
-        // await faceapi.nets.faceLandmark68Net.loadFromUri('models');
-        // await faceapi.nets.faceRecognitionNet.loadFromUri('models');
-        // await faceapi.nets.faceExpressionNet.loadFromUri('models');
+        await Promise.all([
+          faceapi.nets.tinyFaceDetector.loadFromUri('./models'),
+          faceapi.nets.faceLandmark68Net.loadFromUri('./models'),
+          faceapi.nets.faceRecognitionNet.loadFromUri('./models'),
+          faceapi.nets.faceExpressionNet.loadFromUri('./models')
+        ])
+
         const video = document.querySelector('video');
         const canvas = document.querySelector('canvas');
+        const ctx = canvas.getContext('2d');
         const options = new faceapi.TinyFaceDetectorOptions();
-        // const displaySize = { width: video.width, height: video.height };
-        // faceapi.matchDimensions(canvas, displaySize);
+        const displaySize = { width: 640, height: 480 };
 
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: 'user'
-          },
-          audio: false
-        });
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          let deviceId = '';
 
-        video.srcObject = stream;
-        video.play();
+          devices.forEach((device) => {
+            if (device.kind === 'videoinput') {
+              if (device.label.includes('HD Pro Webcam C920')) {
+                deviceId = device.deviceId;
+              }
+            }
+          });
 
-        tick();
+          const stream = await navigator.mediaDevices.getUserMedia({
+            audio: false,
+            video: {
+              deviceId
+            }
+          });
+
+          setStream(stream);
+        } catch (err) {
+          alert(err);
+        }
+
+        function setStream(stream) {
+          video.srcObject = stream;
+          video.play();
+
+          faceapi.matchDimensions(canvas, displaySize);
+          tick();
+        }
 
         async function tick() {
-          console.log('!');
-          const result = await faceapi.detectSingleFace(
-            video,
-            options
-          ).withFaceExpressions();
-          
-          console.log(result);
+          let happy = 0;
+
+          if (document.querySelector('input').checked) {
+            faceapi.detectSingleFace(
+              video,
+              options
+            ).withFaceExpressions().then((result) => {
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+              if (result) {
+                const resizedResult = faceapi.resizeResults(result, displaySize);
+
+                faceapi.draw.drawDetections(canvas, resizedResult);
+                faceapi.draw.drawFaceExpressions(canvas, resizedResult);
+
+                const { expressions } = resizedResult;
+
+                happy = expressions.happy;
+                render(happy);
+              }
+            }).catch((err) => {
+              console.error(err);
+              render(happy);
+            });
+          } else {
+            render(0);
+          }
 
           requestAnimationFrame(tick);
         }
       })();
+
+      function render(happy) {
+        const happyMaxLength = 100;
+
+        happyList.push(happy * happy * 255);
+
+        if (happyMaxLength <= happyList.length) {
+          happyList.shift();
+        }
+
+        happy = Math.round(happyList.reduce((sum, value) => sum + value, 0) / happyList.length);
+        document.querySelector('p').textContent = `😄 ${ String(happy).padStart(3, '0') }`;
+        window.electron.render(happy);
+      }
     </script>
-    
   </body>
 </html>
